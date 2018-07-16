@@ -1,0 +1,26 @@
+pipeline {
+    agent none
+    stages {
+        stage("Checkout"){
+            steps {
+                echo env.JOB_BASE_NAME
+                echo "Checking out"
+            }
+        }
+        stage("Build"){
+            steps {
+                echo "Building"
+            }
+        }
+        stage("Test"){
+            steps {
+                echo "Testing"
+            }
+        }
+        stage("Report"){
+            steps { 
+                echo "Reporting"
+            }
+        }
+    }
+}
