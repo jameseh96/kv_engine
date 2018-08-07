@@ -96,7 +96,7 @@ public:
     }
 
     ActiveStreamCheckpointProcessorTask& getCheckpointSnapshotTask() const {
-        LockHolder guard(checkpointCreatorMutex);
+        LockHolder guard(*checkpointCreatorMutex);
         return *static_cast<ActiveStreamCheckpointProcessorTask*>(
                 checkpointCreatorTask.get());
     }

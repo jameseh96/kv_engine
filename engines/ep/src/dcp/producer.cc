@@ -232,7 +232,7 @@ DcpProducer::~DcpProducer() {
 }
 
 void DcpProducer::cancelCheckpointCreatorTask() {
-    LockHolder guard(checkpointCreatorMutex);
+    LockHolder guard(*checkpointCreatorMutex);
     if (checkpointCreatorTask) {
         static_cast<ActiveStreamCheckpointProcessorTask*>(
                 checkpointCreatorTask.get())
@@ -968,7 +968,7 @@ void DcpProducer::addStats(ADD_STAT add_stat, const void *c) {
 
     ExTask pointerCopy;
     { // Locking scope
-        LockHolder guard(checkpointCreatorMutex);
+        LockHolder guard(*checkpointCreatorMutex);
         pointerCopy = checkpointCreatorTask;
     }
 
@@ -1294,20 +1294,20 @@ bool DcpProducer::bufferLogInsert(size_t bytes) {
 }
 
 void DcpProducer::createCheckpointProcessorTask() {
-    LockHolder guard(checkpointCreatorMutex);
+    LockHolder guard(*checkpointCreatorMutex);
     checkpointCreatorTask =
             std::make_shared<ActiveStreamCheckpointProcessorTask>(
                     engine_, shared_from_this());
 }
 
 void DcpProducer::scheduleCheckpointProcessorTask() {
-    LockHolder guard(checkpointCreatorMutex);
+    LockHolder guard(*checkpointCreatorMutex);
     ExecutorPool::get()->schedule(checkpointCreatorTask);
 }
 
 void DcpProducer::scheduleCheckpointProcessorTask(
         std::shared_ptr<ActiveStream> s) {
-    LockHolder guard(checkpointCreatorMutex);
+    LockHolder guard(*checkpointCreatorMutex);
     if (!checkpointCreatorTask) {
         throw std::logic_error(
                 "DcpProducer::scheduleCheckpointProcessorTask task is null");
