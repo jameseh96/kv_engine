@@ -1,10 +1,18 @@
-def getProjectName() {
+def getJobName() {
     return env.JOB_NAME.tokenize("/")[-2]
 }
 
+def getManifestFileName() {
+    if (env.BRANCH_NAME == 'master') {
+        return 'branch-master.xml'
+    } else {
+        return "couchbase-server/${env.BRANCH_NAME}.xml"
+    }
+}
+
 def loadEnvFiles() {
-    def base = "commit-validation/${getProjectName()}.groovy"
-    def overrides = "commit-validation/${getProjectName()}-${BRANCH_NAME}.groovy"
+    def base = "commit-validation/${getJobName()}.groovy"
+    def overrides = "commit-validation/${getJobName()}-${BRANCH_NAME}.groovy"
     for (fileName in [base, overrides]) {
         if (fileExists(fileName)) {
             load fileName
@@ -34,11 +42,11 @@ pipeline {
                 checkout([$class: 'RepoScm',
                     currentBranch: true,
                     jobs: 8,
-                    manifestFile: 'branch-master.xml',
+                    manifestFile: "${getManifestFileName()}",
                     manifestGroup: 'build,kv',
-                    manifestRepositoryUrl: 'https://github.com/couchbase/manifest',
+                    manifestRepositoryUrl: 'git://github.com/couchbase/manifest.git',
                     quiet: true,
-                    resetFirst: true]) 
+                    resetFirst: false]) 
                 loadEnvFiles()
             }
         }
