@@ -22,7 +22,8 @@ properties([pipelineTriggers([gerrit(customUrl: '',
                                                        pattern: 'kv_engine']],
                                     triggerOnEvents: [patchsetCreated(excludeDrafts: true,
                                                                        excludeNoCodeChange: false,
-                                                                       excludeTrivialRebase: false)])])])
+                                                                       excludeTrivialRebase: false),
+                                                      draftPublished()])])])
 
 pipeline {
     agent none
