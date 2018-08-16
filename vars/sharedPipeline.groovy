@@ -1,5 +1,9 @@
-def getJobName() {
-    return env.JOB_NAME.tokenize("/")[-2]
+def closureToMap(closure, initialValues=[:]) {
+    def map = initialValues
+    closure.resolveStrategy = Closure.DELEGATE_ONLY
+    closure.delegate = map
+    closure()
+    return map
 }
 
 def getManifestFileName() {
@@ -10,14 +14,9 @@ def getManifestFileName() {
     }
 }
 
-def loadEnvFiles() {
-    def base = "commit-validation/${getJobName()}.groovy"
-    def overrides = "commit-validation/${getJobName()}-${BRANCH_NAME}.groovy"
-    for (fileName in [base, overrides]) {
-        if (fileExists(fileName)) {
-            load fileName
-        }
-    }
+def withConfEnv(env, envOverrides, body) {
+    def envMap = closureToMap(envOverrides, ["env":env])
+    withEnv (envMap.collect { key, value -> key + "=" + value }, body)
 }
 
 properties([pipelineTriggers([gerrit(customUrl: '',
@@ -33,12 +32,9 @@ properties([pipelineTriggers([gerrit(customUrl: '',
                                                                        excludeTrivialRebase: false),
                                                       draftPublished()])])])
 
-def call(body) {
+def call(env, body) {
     // evaluate the body block, and collect configuration into the object
-    def pipelineParams= [:]
-    body.resolveStrategy = Closure.DELEGATE_FIRST
-    body.delegate = pipelineParams
-    body()
+    def params = closureToMap(body)
 
     pipeline {
         agent none
@@ -54,7 +50,14 @@ def call(body) {
                         manifestRepositoryUrl: 'git://github.com/couchbase/manifest.git',
                         quiet: true,
                         resetFirst: false]) 
-                    loadEnvFiles()
+                    echo params.label
+                    echo env.PATH
+                    //echo params.env
+                    sh 'env'
+                    sh 'which env'
+                    withConfEnv(env, params.envConf) {
+                        sh '/usr/bin/env'
+                    }
                 }
             }
         }
