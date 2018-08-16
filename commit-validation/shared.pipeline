@@ -1,0 +1,63 @@
+def getJobName() {
+    return env.JOB_NAME.tokenize("/")[-2]
+}
+
+def getManifestFileName() {
+    if (env.BRANCH_NAME == 'master') {
+        return 'branch-master.xml'
+    } else {
+        return "couchbase-server/${env.BRANCH_NAME}.xml"
+    }
+}
+
+def loadEnvFiles() {
+    def base = "commit-validation/${getJobName()}.groovy"
+    def overrides = "commit-validation/${getJobName()}-${BRANCH_NAME}.groovy"
+    for (fileName in [base, overrides]) {
+        if (fileExists(fileName)) {
+            load fileName
+        }
+    }
+}
+
+properties([pipelineTriggers([gerrit(customUrl: '',
+                                    serverName: 'review.couchbase.org',
+                                    silentStartMode: true,
+                                    gerritProjects: [[branches: [[compareType: 'PLAIN',
+                                                                   pattern: env.BRANCH_NAME]],
+                                                       compareType: 'PLAIN',
+                                                       disableStrictForbiddenFileVerification: false,
+                                                       pattern: 'kv_engine']],
+                                    triggerOnEvents: [patchsetCreated(excludeDrafts: true,
+                                                                       excludeNoCodeChange: false,
+                                                                       excludeTrivialRebase: false),
+                                                      draftPublished()])])])
+
+def call(body) {
+    // evaluate the body block, and collect configuration into the object
+    def pipelineParams= [:]
+    body.resolveStrategy = Closure.DELEGATE_FIRST
+    body.delegate = pipelineParams
+    body()
+
+    pipeline {
+        agent none
+        stages {
+            stage("Run single-project"){
+                agent { label 'mac' }
+                steps {
+                    checkout([$class: 'RepoScm',
+                        currentBranch: true,
+                        jobs: 8,
+                        manifestFile: "${getManifestFileName()}",
+                        manifestGroup: 'build,kv',
+                        manifestRepositoryUrl: 'git://github.com/couchbase/manifest.git',
+                        quiet: true,
+                        resetFirst: false]) 
+                    loadEnvFiles()
+                }
+            }
+        }
+    }
+}
+

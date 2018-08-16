@@ -1,5 +1,3 @@
-env.AGENT_LABEL = "ubuntu-1604 && ${env.BRANCH_NAME}"
-
 env.CC="clang-3.9"
 env.CXX="clang++-3.9"
 env.CCC_CC="clang-3.9"
