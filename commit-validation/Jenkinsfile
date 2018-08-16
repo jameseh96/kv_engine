@@ -36,6 +36,14 @@ properties([pipelineTriggers([gerrit(customUrl: '',
 pipeline {
     agent none
     stages {
+        stage("Dir"){
+            agent none
+            steps {
+                loadEnvFiles()
+                sh 'pwd'
+                sh 'ls'
+            }
+        }
         stage("Run single-project"){
             agent { label 'mac' }
             steps {

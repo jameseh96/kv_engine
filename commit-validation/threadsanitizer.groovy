@@ -1,3 +1,5 @@
+env.AGENT_LABEL = "ubuntu-1604 && ${env.BRANCH_NAME}"
+
 // 2018-02-01: cbdeps are now compiled with GCC 7 (see https://issues.couchbase.com/browse/CBD-2151).
 // We therefore need to ensure that clang uses GCC7's libstdc++ (and not the default GCC 5). As GCC 7 is installed in /usr/local,
 // clang doesn't automatically detect it, so we need to explicitly tell it to use the toolchain in /usr/local.
