@@ -47,12 +47,8 @@ properties([pipelineTriggers([gerrit(customUrl: '',
                                                                        excludeNoCodeChange: false,
                                                                        excludeTrivialRebase: false),
                                                       draftPublished()])])])
-node {
-    sh 'ls'
-    sh 'pwd'
-}
 
-def call(name, nodeLabel) {
+return { name, nodeLabel ->
     pipeline {
         agent { label 'mac' }
         stages {
