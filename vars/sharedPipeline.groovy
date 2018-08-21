@@ -25,8 +25,8 @@ def addToEnv(closure) {
 }
 
 def loadEnvFiles() {
-    def base = "commit-validation/common/${getJobName()}.groovy"
-    def overrides = "commit-validation/${getProjectName()}/${getJobName()}.groovy"
+    def base = "commit-validation/config/common/${getJobName()}.groovy"
+    def overrides = "commit-validation/config/${getProjectName()}/${getJobName()}.groovy"
     for (fileName in [base, overrides]) {
         if (fileExists(fileName)) {
             def closure = load fileName
