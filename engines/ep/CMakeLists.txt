@@ -42,7 +42,9 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_INSTALL_PREFIX}/include
                            ${Couchstore_SOURCE_DIR}/include
                            ${Couchstore_BINARY_DIR}/include
                            ${phosphor_SOURCE_DIR}/include
-                           ${CMAKE_CURRENT_BINARY_DIR})
+                           ${CMAKE_CURRENT_BINARY_DIR}
+                           ${PROMETHEUS_INCLUDE_DIR}
+        )
 
 # Mark third-party libraries as 'system' so we skip any warnings they
 # generate.
@@ -121,6 +123,7 @@ target_link_libraries(kvstore_gen
         ${EP_STORAGE_LIBS}
         ${LIBEVENT_LIBRARIES}
         ${FOLLY_LIBRARIES}
+        ${PROMETHEUS_LIBRARIES}
 )
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/src/stats-info.c
@@ -366,8 +369,8 @@ endif(NOT WIN32)
 TARGET_LINK_LIBRARIES(ep JSON_checker ${EP_STORAGE_LIBS}
                       engine_utilities ep-engine_collections dirutils cbcompress
                       hdr_histogram_static mcbp mcd_util platform phosphor
-                      xattr mcd_tracing statistics ${LIBEVENT_LIBRARIES}
-                      ${FOLLY_LIBRARIES})
+                      xattr mcd_tracing ${LIBEVENT_LIBRARIES}
+                      ${FOLLY_LIBRARIES} ${PROMETHEUS_LIBRARIES})
 add_sanitizers(ep)
 
 if (NOT EP_BYPASS_TESTS)
@@ -404,7 +407,8 @@ if (NOT EP_BYPASS_TESTS)
             mcbp
             mcd_util
             platform
-            ${LIBEVENT_LIBRARIES})
+            ${LIBEVENT_LIBRARIES}
+            ${PROMETHEUS_LIBRARIES})
     add_sanitizers(ep_perfsuite)
 
     ADD_EXECUTABLE(ep_engine_benchmarks
@@ -427,7 +431,8 @@ if (NOT EP_BYPASS_TESTS)
                    ${Memcached_SOURCE_DIR}/programs/engine_testapp/mock_cookie.cc
                    ${Memcached_SOURCE_DIR}/programs/engine_testapp/mock_server.cc
                    ${Memcached_SOURCE_DIR}/daemon/doc_pre_expiry.cc
-                   ${Memcached_SOURCE_DIR}/engines/ep/tests/module_tests/test_helpers.cc)
+                   ${Memcached_SOURCE_DIR}/engines/ep/tests/module_tests/test_helpers.cc
+                   ${PROMETHEUS_LIBRARIES})
 
     TARGET_LINK_LIBRARIES(ep_engine_benchmarks PRIVATE
             benchmark
@@ -451,7 +456,8 @@ if (NOT EP_BYPASS_TESTS)
             ${MALLOC_LIBRARIES}
             ${EP_STORAGE_LIBS}
             ${LIBEVENT_LIBRARIES}
-            ${FOLLY_LIBRARIES})
+            ${FOLLY_LIBRARIES}
+            ${PROMETHEUS_LIBRARIES})
     TARGET_INCLUDE_DIRECTORIES(ep_engine_benchmarks PUBLIC
                                ${benchmark_SOURCE_DIR}/include
                                tests
@@ -465,7 +471,8 @@ if (NOT EP_BYPASS_TESTS)
     TARGET_LINK_LIBRARIES(ep-engine_sizes JSON_checker hdr_histogram_static
                           engine_utilities ep-engine_collections ${EP_STORAGE_LIBS}
                           dirutils cbcompress platform mcbp mcd_util
-                          mcd_tracing phosphor statistics xattr ${LIBEVENT_LIBRARIES} ${FOLLY_LIBRARIES})
+                          mcd_tracing phosphor xattr ${LIBEVENT_LIBRARIES}
+                          ${FOLLY_LIBRARIES} ${PROMETHEUS_LIBRARIES})
     add_sanitizers(ep-engine_sizes)
 
 

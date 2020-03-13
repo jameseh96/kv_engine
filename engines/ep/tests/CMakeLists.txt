@@ -134,7 +134,8 @@ TARGET_LINK_LIBRARIES(ep-engine_ep_unit_tests
         ${EP_STORAGE_LIBS}
         ${MALLOC_LIBRARIES}
         ${LIBEVENT_LIBRARIES}
-        ${FOLLY_LIBRARIES})
+        ${FOLLY_LIBRARIES}
+        ${PROMETHEUS_LIBRARIES})
 
 if (NUMA_FOUND)
     target_link_libraries(ep-engine_ep_unit_tests ${NUMA_LIBRARIES})

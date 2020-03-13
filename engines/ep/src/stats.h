@@ -28,6 +28,7 @@
 #include <platform/corestore.h>
 #include <platform/non_negative_counter.h>
 #include <platform/platform_time.h>
+#include <statistics/stat_units.h>
 #include <relaxed_atomic.h>
 #include <statistics/stat_units.h>
 
