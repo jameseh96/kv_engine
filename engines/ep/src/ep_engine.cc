@@ -44,6 +44,7 @@
 #include "replicationthrottle.h"
 #include "server_document_iface_border_guard.h"
 #include "statistics/collector.h"
+#include "statistics/prometheus_collector.h"
 #include "stats-info.h"
 #include "string_utils.h"
 #include "trace_helpers.h"
