@@ -6742,3 +6742,10 @@ void EventuallyPersistentEngine::set_num_writer_threads(
 void EventuallyPersistentEngine::disconnect(gsl::not_null<const void*> cookie) {
     acquireEngine(this)->handleDisconnect(cookie);
 }
+
+void EventuallyPersistentEngine::doPrometheusStats(
+        PrometheusStatCollector& collector) {
+    collector.addDefaultLabel("bucket", getName());
+    doTimingStats(collector);
+    doEngineStats(collector);
+}

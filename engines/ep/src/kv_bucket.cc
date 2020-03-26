@@ -56,6 +56,7 @@
 #include "kvstore.h"
 #include "locks.h"
 #include "mutation_log.h"
+#include "prometheus.h"
 #include "replicationthrottle.h"
 #include "rollback_result.h"
 #include "statistics/collector.h"
@@ -306,6 +307,8 @@ KVBucket::KVBucket(EventuallyPersistentEngine& theEngine)
     }
 
     ExecutorPool::get()->registerTaskable(ObjectRegistry::getCurrentEngine()->getTaskable());
+    PrometheusStatistics::get()->registerEngine(
+            ObjectRegistry::getCurrentEngine());
 
     // Reset memory overhead when bucket is created.
     for (auto& core : stats.coreLocal) {

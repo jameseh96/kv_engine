@@ -46,6 +46,7 @@ class DcpConnMap;
 class DcpFlowControlManager;
 class ItemMetaData;
 class KVBucket;
+class PrometheusStatCollector;
 class StatCollector;
 class StoredValue;
 class VBucketCountVisitor;
@@ -840,6 +841,8 @@ public:
      * @return the privilege revision, which changes when privileges do.
      */
     uint32_t getPrivilegeRevision(const void* cookie) const;
+
+    void doPrometheusStats(PrometheusStatCollector& collector);
 
 protected:
     friend class EpEngineValueChangeListener;
