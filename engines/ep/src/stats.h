@@ -29,6 +29,7 @@
 #include <platform/non_negative_counter.h>
 #include <platform/platform_time.h>
 #include <relaxed_atomic.h>
+#include <statistics/stat_units.h>
 
 #include <platform/histogram.h>
 #include <algorithm>

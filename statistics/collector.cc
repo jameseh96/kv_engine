@@ -21,45 +21,57 @@
 #include <string_view>
 
 using namespace std::string_view_literals;
+using namespace cb::stats;
 
 LabelGuard::~LabelGuard() {
     collector.removeDefaultLabel(label);
 }
 
-void CBStatCollector::addStat(std::string_view k, std::string_view v) {
-    addStatFn(k, v, cookie);
+const StatSpec& StatCollector::lookup(StatKey key) {
+    Expects(size_t(key) < size_t(StatKey::enum_max));
+    return statSpecs[size_t(key)];
 }
 
-void CBStatCollector::addStat(std::string_view k, bool v) {
+void CBStatCollector::addStat(const cb::stats::StatSpec& k,
+                              std::string_view v) {
+    addStatFn(k.uniqueKey, v, cookie);
+}
+
+void CBStatCollector::addStat(const cb::stats::StatSpec& k, bool v) {
     addStat(k, v ? "true"sv : "false"sv);
 }
 
-void CBStatCollector::addStat(std::string_view k, int64_t v) {
+void CBStatCollector::addStat(const cb::stats::StatSpec& k, int64_t v) {
     fmt::memory_buffer buf;
     format_to(buf, "{}", v);
     addStat(k, {buf.data(), buf.size()});
 }
 
-void CBStatCollector::addStat(std::string_view k, uint64_t v) {
+void CBStatCollector::addStat(const cb::stats::StatSpec& k, uint64_t v) {
     fmt::memory_buffer buf;
     format_to(buf, "{}", v);
     addStat(k, {buf.data(), buf.size()});
 }
 
-void CBStatCollector::addStat(std::string_view k, double v) {
+void CBStatCollector::addStat(const cb::stats::StatSpec& k, double v) {
     fmt::memory_buffer buf;
     format_to(buf, "{}", v);
     addStat(k, {buf.data(), buf.size()});
 }
 
-void CBStatCollector::addStat(std::string_view k, const HistogramData& hist) {
+void CBStatCollector::addStat(const cb::stats::StatSpec& k,
+                              const HistogramData& hist) {
     fmt::memory_buffer buf;
-    format_to(buf, "{}_mean", k);
-    addStat({buf.data(), buf.size()}, hist.mean);
+    format_to(buf, "{}_mean", k.uniqueKey);
+    addStat(StatSpec({buf.data(), buf.size()}), hist.mean);
 
     for (const auto& bucket : hist.buckets) {
         buf.resize(0);
-        format_to(buf, "{}_{},{}", k, bucket.lowerBound, bucket.upperBound);
-        addStat({buf.data(), buf.size()}, bucket.count);
+        format_to(buf,
+                  "{}_{},{}",
+                  k.uniqueKey,
+                  bucket.lowerBound,
+                  bucket.upperBound);
+        addStat(StatSpec({buf.data(), buf.size()}), bucket.count);
     }
 }

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "all_stats.h"
 #include <memcached/engine_common.h>
 #include <platform/histogram.h>
 #include <spdlog/fmt/fmt.h>
@@ -118,11 +119,14 @@ struct LabelGuard {
 /**
  * Interface implemented by stats backends.
  *
- * Allows stats to be added in a key-value manner. Keys may also have
- * labels, but not all backends need support these.
+ * Allows stats to be added in a key-value manner. Keys may also have a metric
+ * family name and labels, but not all backends need support these.
  *
  * Users may call addStat with a key and value to be formatted
  * appropriately by the backend.
+ *
+ * Implementations which do not support labels should use the uniqueKey.
+ * These keys should be unique per-bucket.
  *
  * Stats are often organised in related blocks, for example all stats for a
  * particular bucket. Rather than repeating the bucket label for every stat
@@ -130,24 +134,34 @@ struct LabelGuard {
  *
  * addDefaultLabel("bucket", "bucketName");
  * addStat("foo", 1);
- * addStat("bar", 2);
+ * addStat({"bar_baz", "bar", {"someLabel", "baz"}}, 2);
+ * addStat({"bar_qux", "bar", {"someLabel", "qux"}}, 3);
  * removeDefaultLabel("bucket");
  *
  * Would lead to CBStats generating:
  *
  * foo: 1
- * bar: 2
+ * bar_baz: 2
+ * bar_qux: 3
  *
  * But the Prometheus backend may generate:
  *
  * foo{bucket="bucketName"} 1
- * bar{bucket="bucketName"} 2
+ * bar{bucket="bucketName", someLabel="baz"} 2
+ * bar{bucket="bucketName", someLabel="qux"} 3
  */
 class StatCollector {
 public:
     /**
      * Add a label which will be included for all added stats until it is
      * removed.
+     *
+     * For example, a bucket label can be applied to a group of stats:
+     *
+     * addDefaultLabel("bucket", "bucketName");
+     * addStat("foo", 1);
+     * addStat({"bar_baz", "bar", {"someLabel", "baz"}}, 2);
+     * removeDefaultLabel("bucket");
      *
      * Adding a label with the same name will overwrite the previously set
      * value.
@@ -171,11 +185,11 @@ public:
      * Avoid "manually" formatting stats to text and using this overload
      * if they are handled by other overloads e.g, boolean/number/histogram.
      */
-    virtual void addStat(std::string_view k, std::string_view v) = 0;
+    virtual void addStat(const cb::stats::StatSpec& k, std::string_view v) = 0;
     /**
      * Add a boolean stat to the collector.
      */
-    virtual void addStat(std::string_view k, bool v) = 0;
+    virtual void addStat(const cb::stats::StatSpec& k, bool v) = 0;
 
     /**
      * Add a numeric stat to the collector.
@@ -185,9 +199,9 @@ public:
      * cause narrowing, loss of precision, so backends are responsible
      * for handling each appropriately.
      */
-    virtual void addStat(std::string_view k, int64_t v) = 0;
-    virtual void addStat(std::string_view k, uint64_t v) = 0;
-    virtual void addStat(std::string_view k, double v) = 0;
+    virtual void addStat(const cb::stats::StatSpec& k, int64_t v) = 0;
+    virtual void addStat(const cb::stats::StatSpec& k, uint64_t v) = 0;
+    virtual void addStat(const cb::stats::StatSpec& k, double v) = 0;
 
     /**
      * Add a histogram stat to the collector.
@@ -195,7 +209,8 @@ public:
      * HistogramData is an intermediate type to which multiple
      * histogram types are converted.
      */
-    virtual void addStat(std::string_view k, const HistogramData& hist) = 0;
+    virtual void addStat(const cb::stats::StatSpec& k,
+                         const HistogramData& hist) = 0;
 
     void addStat(std::string_view k, const char* v) {
         addStat(k, std::string_view(v));
@@ -219,7 +234,7 @@ public:
      * uint64_t,and double.
      */
     template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
-    void addStat(std::string_view k, T v) {
+    void addStat(const cb::stats::StatSpec& k, T v) {
         /* Converts the value to uint64_t/int64_t/double
          * based on if it is a signed/unsigned type.
          */
@@ -239,7 +254,7 @@ public:
      * Used to adapt histogram types to a single common type
      * for backends to support.
      */
-    void addStat(std::string_view k, const HdrHistogram& v) {
+    void addStat(const cb::stats::StatSpec& k, const HdrHistogram& v) {
         if (v.getValueCount() > 0) {
             HistogramData histData;
             histData.mean = std::round(v.getMean());
@@ -269,7 +284,8 @@ public:
      * for backends to support.
      */
     template <typename T, template <class> class Limits>
-    void addStat(std::string_view k, const Histogram<T, Limits>& hist) {
+    void addStat(const cb::stats::StatSpec& k,
+                 const Histogram<T, Limits>& hist) {
         HistogramData histData{};
         histData.sampleCount = hist.total();
         histData.buckets.reserve(hist.size());
@@ -305,10 +321,20 @@ public:
      *
      */
     template <typename T>
-    auto addStat(std::string_view k, const T& v)
+    auto addStat(const cb::stats::StatSpec& k, const T& v)
             -> std::enable_if_t<std::is_arithmetic_v<decltype(v.load())>,
                                 void> {
         addStat(k, v.load());
+    }
+
+    /**
+     * Look up the given stat key enum in the static statSpecs array.
+     */
+    static const cb::stats::StatSpec& lookup(cb::stats::StatKey key);
+
+    template <typename T>
+    void addStat(cb::stats::StatKey k, T&& v) {
+        addStat(lookup(k), std::forward<T>(v));
     }
 };
 
@@ -342,12 +368,13 @@ public:
     // They would otherwise be shadowed
     using StatCollector::addStat;
 
-    void addStat(std::string_view k, std::string_view v) override;
-    void addStat(std::string_view k, bool v) override;
-    void addStat(std::string_view k, int64_t v) override;
-    void addStat(std::string_view k, uint64_t v) override;
-    void addStat(std::string_view k, double v) override;
-    void addStat(std::string_view k, const HistogramData& hist) override;
+    void addStat(const cb::stats::StatSpec& k, std::string_view v) override;
+    void addStat(const cb::stats::StatSpec& k, bool v) override;
+    void addStat(const cb::stats::StatSpec& k, int64_t v) override;
+    void addStat(const cb::stats::StatSpec& k, uint64_t v) override;
+    void addStat(const cb::stats::StatSpec& k, double v) override;
+    void addStat(const cb::stats::StatSpec& k,
+                 const HistogramData& hist) override;
 
 private:
     const AddStatFn& addStatFn;
