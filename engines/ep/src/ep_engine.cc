@@ -4045,75 +4045,55 @@ ENGINE_ERROR_CODE EventuallyPersistentEngine::doAllFailoverLogStats(
     return rv;
 }
 
-ENGINE_ERROR_CODE EventuallyPersistentEngine::doTimingStats(
-        const void* cookie, const AddStatFn& add_stat) {
-    add_casted_stat("bg_wait", stats.bgWaitHisto, add_stat, cookie);
-    add_casted_stat("bg_load", stats.bgLoadHisto, add_stat, cookie);
-    add_casted_stat("set_with_meta", stats.setWithMetaHisto, add_stat, cookie);
-    add_casted_stat("pending_ops", stats.pendingOpsHisto, add_stat, cookie);
+ENGINE_ERROR_CODE EventuallyPersistentEngine::doTimingStats(StatCollector& collector) {
+    using namespace cb::stats;
+    collector.addStat(StatKey::bg_wait, stats.bgWaitHisto);
+    collector.addStat(StatKey::bg_load, stats.bgLoadHisto);
+    collector.addStat(StatKey::set_with_meta, stats.setWithMetaHisto);
+    collector.addStat(StatKey::pending_ops, stats.pendingOpsHisto);
 
     // Vbucket visitors
-    add_casted_stat(
-            "access_scanner", stats.accessScannerHisto, add_stat, cookie);
-    add_casted_stat("checkpoint_remover",
-                    stats.checkpointRemoverHisto,
-                    add_stat,
-                    cookie);
-    add_casted_stat("item_pager", stats.itemPagerHisto, add_stat, cookie);
-    add_casted_stat("expiry_pager", stats.expiryPagerHisto, add_stat, cookie);
-
-    add_casted_stat("storage_age", stats.dirtyAgeHisto, add_stat, cookie);
+    collector.addStat(StatKey::checkpoint_remover,
+                      stats.checkpointRemoverHisto);
+    collector.addStat(StatKey::item_pager, stats.itemPagerHisto);
+    collector.addStat(StatKey::expiry_pager, stats.expiryPagerHisto);
+    collector.addStat(StatKey::storage_age, stats.dirtyAgeHisto);
 
     // Regular commands
-    add_casted_stat("get_cmd", stats.getCmdHisto, add_stat, cookie);
-    add_casted_stat("store_cmd", stats.storeCmdHisto, add_stat, cookie);
-    add_casted_stat("arith_cmd", stats.arithCmdHisto, add_stat, cookie);
-    add_casted_stat("get_stats_cmd", stats.getStatsCmdHisto, add_stat, cookie);
+    collector.addStat(StatKey::get_cmd, stats.getCmdHisto);
+    collector.addStat(StatKey::store_cmd, stats.storeCmdHisto);
+    collector.addStat(StatKey::arith_cmd, stats.arithCmdHisto);
+    collector.addStat(StatKey::get_stats_cmd, stats.getStatsCmdHisto);
+
     // Admin commands
-    add_casted_stat("get_vb_cmd", stats.getVbucketCmdHisto, add_stat, cookie);
-    add_casted_stat("set_vb_cmd", stats.setVbucketCmdHisto, add_stat, cookie);
-    add_casted_stat("del_vb_cmd", stats.delVbucketCmdHisto, add_stat, cookie);
-    add_casted_stat(
-            "chk_persistence_cmd", stats.chkPersistenceHisto, add_stat, cookie);
+    collector.addStat(StatKey::get_vb_cmd, stats.getVbucketCmdHisto);
+    collector.addStat(StatKey::set_vb_cmd, stats.setVbucketCmdHisto);
+    collector.addStat(StatKey::del_vb_cmd, stats.delVbucketCmdHisto);
+
     // Misc
-    add_casted_stat("notify_io", stats.notifyIOHisto, add_stat, cookie);
-    add_casted_stat("batch_read", stats.getMultiHisto, add_stat, cookie);
+    collector.addStat(StatKey::notify_io, stats.notifyIOHisto);
+    collector.addStat(StatKey::batch_read, stats.getMultiHisto);
 
     // Disk stats
-    add_casted_stat("disk_insert", stats.diskInsertHisto, add_stat, cookie);
-    add_casted_stat("disk_update", stats.diskUpdateHisto, add_stat, cookie);
-    add_casted_stat("disk_del", stats.diskDelHisto, add_stat, cookie);
-    add_casted_stat("disk_vb_del", stats.diskVBDelHisto, add_stat, cookie);
-    add_casted_stat("disk_commit", stats.diskCommitHisto, add_stat, cookie);
-
-    add_casted_stat(
-            "item_alloc_sizes", stats.itemAllocSizeHisto, add_stat, cookie);
-    add_casted_stat(
-            "bg_batch_size", stats.getMultiBatchSizeHisto, add_stat, cookie);
+    collector.addStat(StatKey::disk_insert, stats.diskInsertHisto);
+    collector.addStat(StatKey::disk_update, stats.diskUpdateHisto);
+    collector.addStat(StatKey::disk_del, stats.diskDelHisto);
+    collector.addStat(StatKey::disk_vb_del, stats.diskVBDelHisto);
+    collector.addStat(StatKey::disk_commit, stats.diskCommitHisto);
 
     // Checkpoint cursor stats
-    add_casted_stat("persistence_cursor_get_all_items",
-                    stats.persistenceCursorGetItemsHisto,
-                    add_stat,
-                    cookie);
-    add_casted_stat("dcp_cursors_get_all_items",
-                    stats.dcpCursorsGetItemsHisto,
-                    add_stat,
-                    cookie);
+    collector.addStat(StatKey::persistence_cursor_get_all_items,
+                      stats.persistenceCursorGetItemsHisto);
+    collector.addStat(StatKey::dcp_cursors_get_all_items,
+                      stats.dcpCursorsGetItemsHisto);
 
     // SyncWrite stats
-    add_casted_stat("sync_write_commit_majority",
-                    stats.syncWriteCommitTimes.at(0),
-                    add_stat,
-                    cookie);
-    add_casted_stat("sync_write_commit_majority_and_persist_on_master",
-                    stats.syncWriteCommitTimes.at(1),
-                    add_stat,
-                    cookie);
-    add_casted_stat("sync_write_commit_persist_to_majority",
-                    stats.syncWriteCommitTimes.at(2),
-                    add_stat,
-                    cookie);
+    collector.addStat(StatKey::sync_write_commit_majority,
+                      stats.syncWriteCommitTimes.at(0));
+    collector.addStat(StatKey::sync_write_commit_majority_and_persist_on_master,
+                      stats.syncWriteCommitTimes.at(1));
+    collector.addStat(StatKey::sync_write_commit_persist_to_majority,
+                      stats.syncWriteCommitTimes.at(2));
 
     return ENGINE_SUCCESS;
 }
@@ -4623,7 +4603,8 @@ ENGINE_ERROR_CODE EventuallyPersistentEngine::getStats(
                 cookie, add_stat, key.data(), key.size());
     }
     if (key == "timings"sv) {
-        return doTimingStats(cookie, add_stat);
+        CBStatCollector collector{add_stat, cookie};
+        return doTimingStats(collector);
     }
     if (key == "dispatcher"sv) {
         return doDispatcherStats(cookie, add_stat);
