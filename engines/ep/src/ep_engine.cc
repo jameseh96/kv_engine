@@ -2748,7 +2748,7 @@ ENGINE_ERROR_CODE EventuallyPersistentEngine::doEngineStats(
 
     CBStatCollector collector{add_stat, cookie};
 
-    kvBucket->getAggregatedVBucketStats(cookie, add_stat);
+    kvBucket->getAggregatedVBucketStats(collector);
 
     kvBucket->getFileStats(collector);
 

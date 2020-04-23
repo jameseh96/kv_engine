@@ -1143,8 +1143,7 @@ void KVBucket::snapshotStats() {
     getOneRWUnderlying()->snapshotStats(snap.smap);
 }
 
-void KVBucket::getAggregatedVBucketStats(const void* cookie,
-                                         const AddStatFn& add_stat) {
+void KVBucket::getAggregatedVBucketStats(StatCollector& collector) {
     // Create visitors for each of the four vBucket states, and collect
     // stats for each.
     auto active = makeVBCountVisitor(vbucket_state_active);
@@ -1166,8 +1165,7 @@ void KVBucket::getAggregatedVBucketStats(const void* cookie,
                                                         pending->getNumItems());
 
     // And finally actually return the stats using the AddStatFn callback.
-    appendAggregatedVBucketStats(
-            *active, *replica, *pending, *dead, cookie, add_stat);
+    appendAggregatedVBucketStats(*active, *replica, *pending, *dead, collector);
 }
 
 std::unique_ptr<VBucketCountVisitor> KVBucket::makeVBCountVisitor(
@@ -1179,14 +1177,11 @@ void KVBucket::appendAggregatedVBucketStats(VBucketCountVisitor& active,
                                             VBucketCountVisitor& replica,
                                             VBucketCountVisitor& pending,
                                             VBucketCountVisitor& dead,
-                                            const void* cookie,
-                                            const AddStatFn& add_stat) {
+                                            StatCollector& collector) {
     // Simplify the repetition of formatting and calling add_stat with cookie each
     // time by using a generic lambda.
-    auto DO_STAT = [&add_stat, cookie](std::string_view key, auto&& value) {
-        fmt::memory_buffer buf;
-        format_to(buf, "{}", value);
-        add_stat(key, {buf.data(), buf.size()}, cookie);
+    auto DO_STAT = [&collector](std::string_view key, auto&& value) {
+        collector.addStat(key, value);
     };
 
     // Top-level stats:
@@ -1380,16 +1375,19 @@ void KVBucket::appendAggregatedVBucketStats(VBucketCountVisitor& active,
             active.getTotalHLCDriftExceptionCounters().ahead +
                     replica.getTotalHLCDriftExceptionCounters().ahead);
 
-    for (uint8_t ii = 0; ii < active.getNumDatatypes(); ++ii) {
-        std::string name = "ep_active_datatype_";
-        name += mcbp::datatype::to_string(ii);
-        DO_STAT(name.c_str(), active.getDatatypeCount(ii));
-    }
+    if (auto* cbstat = dynamic_cast<CBStatCollector*>(&collector); cbstat) {
+        // TODO: keys with commas quietly break prometheus
+        for (uint8_t ii = 0; ii < active.getNumDatatypes(); ++ii) {
+            std::string name = "ep_active_datatype_";
+            name += mcbp::datatype::to_string(ii);
+            DO_STAT(name.c_str(), active.getDatatypeCount(ii));
+        }
 
-    for (uint8_t ii = 0; ii < replica.getNumDatatypes(); ++ii) {
-        std::string name = "ep_replica_datatype_";
-        name += mcbp::datatype::to_string(ii);
-        DO_STAT(name.c_str(), replica.getDatatypeCount(ii));
+        for (uint8_t ii = 0; ii < replica.getNumDatatypes(); ++ii) {
+            std::string name = "ep_replica_datatype_";
+            name += mcbp::datatype::to_string(ii);
+            DO_STAT(name.c_str(), replica.getDatatypeCount(ii));
+        }
     }
 
 #undef DO_STAT

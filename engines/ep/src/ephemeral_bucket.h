@@ -147,8 +147,7 @@ protected:
                                       VBucketCountVisitor& replica,
                                       VBucketCountVisitor& pending,
                                       VBucketCountVisitor& dead,
-                                      const void* cookie,
-                                      const AddStatFn& add_stat) override;
+                                      StatCollector& collector) override;
 
     // Protected member variables /////////////////////////////////////////////
 
