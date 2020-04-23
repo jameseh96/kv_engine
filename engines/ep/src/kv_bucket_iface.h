@@ -39,6 +39,7 @@ class PersistenceCallback;
 class VBucketMap;
 class VBucketVisitor;
 class PausableVBucketVisitor;
+class StatCollector;
 class Warmup;
 namespace Collections {
 class Manager;
@@ -362,8 +363,7 @@ public:
      *         ENGINE_KEY_ENOENT if file stats are not available
      *         from the store.
      */
-    virtual ENGINE_ERROR_CODE getFileStats(const void* cookie,
-                                           const AddStatFn& add_stat) = 0;
+    virtual ENGINE_ERROR_CODE getFileStats(StatCollector& collector) = 0;
 
     /**
      * Get detailed (per-vbucket) disk stats.
