@@ -116,6 +116,7 @@ target_link_libraries(kvstore_gen
         mcd_util
         platform
         phosphor
+        statistics
         xattr
         ${EP_STORAGE_LIBS}
         ${LIBEVENT_LIBRARIES}
@@ -326,7 +327,6 @@ ADD_LIBRARY(ep_objs OBJECT
             src/server_document_iface_border_guard.h
             src/seqlist.cc
             src/stats.cc
-            src/statwriter.cc
             src/string_utils.cc
             src/storeddockey.cc
             src/stored-value.cc
@@ -366,7 +366,7 @@ endif(NOT WIN32)
 TARGET_LINK_LIBRARIES(ep JSON_checker ${EP_STORAGE_LIBS}
                       engine_utilities ep-engine_collections dirutils cbcompress
                       hdr_histogram_static mcbp mcd_util platform phosphor
-                      xattr mcd_tracing ${LIBEVENT_LIBRARIES}
+                      xattr mcd_tracing statistics ${LIBEVENT_LIBRARIES}
                       ${FOLLY_LIBRARIES})
 add_sanitizers(ep)
 
@@ -446,6 +446,7 @@ if (NOT EP_BYPASS_TESTS)
             phosphor
             platform
             platform_cb_malloc_arena
+            statistics
             xattr
             ${MALLOC_LIBRARIES}
             ${EP_STORAGE_LIBS}
@@ -464,7 +465,7 @@ if (NOT EP_BYPASS_TESTS)
     TARGET_LINK_LIBRARIES(ep-engine_sizes JSON_checker hdr_histogram_static
                           engine_utilities ep-engine_collections ${EP_STORAGE_LIBS}
                           dirutils cbcompress platform mcbp mcd_util
-                          mcd_tracing phosphor xattr ${LIBEVENT_LIBRARIES} ${FOLLY_LIBRARIES})
+                          mcd_tracing phosphor statistics xattr ${LIBEVENT_LIBRARIES} ${FOLLY_LIBRARIES})
     add_sanitizers(ep-engine_sizes)
 
 

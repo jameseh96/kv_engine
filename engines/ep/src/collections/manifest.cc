@@ -18,7 +18,7 @@
 #include "collections/manifest.h"
 #include "bucket_logger.h"
 #include "collections/collections_types.h"
-#include "statwriter.h"
+#include "statistics/collector.h"
 #include "utility.h"
 
 #include <json_utilities.h>

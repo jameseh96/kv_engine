@@ -30,7 +30,7 @@
 #include "failover-table.h"
 #include "item.h"
 #include "mutation_log.h"
-#include "statwriter.h"
+#include "statistics/collector.h"
 #include "vb_visitors.h"
 #include "vbucket_bgfetch_item.h"
 #include "vbucket_state.h"
