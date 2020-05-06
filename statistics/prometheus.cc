@@ -15,11 +15,10 @@
  *   limitations under the License.
  */
 
-#include "prometheus.h"
+#include "statistics/prometheus.h"
 
 #include "ep_engine.h"
-#include "objectregistry.h"
-#include "statwriter_prometheus.h"
+#include <statistics/prometheus_collector.h>
 
 std::mutex PrometheusStatistics::creationGuard;
 std::atomic<PrometheusStatistics*> PrometheusStatistics::instancePtr;
@@ -33,7 +32,6 @@ PrometheusStatistics* PrometheusStatistics::get() {
         // recheck, it may have been created while we blocked
         // waiting for the lock
         if (tmp == nullptr) {
-            NonBucketAllocationGuard guard;
             instance.reset(new PrometheusStatistics());
             tmp = instance.get();
             instancePtr.store(tmp);

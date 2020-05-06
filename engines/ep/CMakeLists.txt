@@ -321,7 +321,6 @@ ADD_LIBRARY(ep_objs OBJECT
             src/persistence_callback.cc
             src/pre_link_document_context.cc
             src/pre_link_document_context.h
-            src/prometheus.cc
             src/progress_tracker.cc
             src/replicationthrottle.cc
             src/linked_list.cc
